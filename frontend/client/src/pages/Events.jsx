@@ -384,13 +384,11 @@ export default function Events() {
   const [selected, setSelected] = useState([]);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showForm, setShowForm] = useState(false);
-
   const [confirmPopup, setConfirmPopup] = useState({
     show: false,
     message: "",
     onConfirm: null,
   });
-
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -398,7 +396,6 @@ export default function Events() {
     file: null,
   });
 
-  // ✅ Fetch data on mount
   useEffect(() => {
     fetchEvents();
     fetchDeletedEvents();
@@ -437,7 +434,6 @@ export default function Events() {
     if (newEvent.file) formData.append("file", newEvent.file);
 
     const res = await createEvent(formData);
-
     setEvents((prev) => [res.data, ...prev]);
     setNewEvent({ title: "", description: "", date: "", file: null });
     setShowForm(false);
@@ -494,38 +490,44 @@ export default function Events() {
         <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center mb-4">
           <div>
             <h1 className="h3 fw-semibold text-dark mb-1">
-              School Events & Circulars
+              🎉 School Events & Circulars
             </h1>
             <p className="text-secondary small mb-0">
-              Add, view, and manage all school events easily.
+              Manage, view, delete and restore school events with ease.
             </p>
           </div>
           <div className="d-flex gap-2 mt-3 mt-sm-0">
             {selected.length > 0 && (
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleDeleteSelected}
-                className="btn btn-danger shadow-sm"
+                className="btn btn-danger shadow-sm px-3"
               >
                 🗑 Delete ({selected.length})
-              </button>
+              </motion.button>
             )}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowForm(true)}
-              className="btn btn-primary shadow-sm"
+              className="btn btn-primary shadow-sm px-3"
             >
               ➕ Add Event
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setShowDeleted((s) => !s)}
-              className="btn btn-dark shadow-sm"
+              className="btn btn-dark shadow-sm px-3"
             >
-              {showDeleted ? "Hide" : "Recently Deleted"}
-            </button>
+              {showDeleted ? "Hide Deleted" : "🗂 Recently Deleted"}
+            </motion.button>
           </div>
         </div>
 
         {/* Events Grid */}
-        <div className="row g-3">
+        <div className="row g-4">
           {events.length === 0 && (
             <div className="text-center text-secondary py-5">
               No events yet — click “Add Event” to create one.
@@ -538,32 +540,59 @@ export default function Events() {
               ev.fileType === "application" || ev.fileType === "pdf";
 
             return (
-              <div key={ev._id} className="col-12 col-sm-6 col-md-4 col-lg-3">
+              <motion.div
+                key={ev._id}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.2 }}
+                className="col-12 col-sm-6 col-md-4 col-lg-3"
+              >
                 <div
-                  className={`card border shadow-sm h-100 ${
-                    selected.includes(ev._id) ? "border-primary border-3" : ""
+                  className={`card h-100 shadow-sm border-0 rounded-3 overflow-hidden position-relative ${
+                    selected.includes(ev._id)
+                      ? "border-primary border-3"
+                      : "border-light"
                   }`}
                   onClick={() => toggleSelect(ev._id)}
                   style={{ cursor: "pointer" }}
                 >
-                  <div className="card-img-top bg-light" style={{ height: 160 }}>
-                    {isImage && ev.filePath ? (
-                      <img
-                        src={`https://jr-school-67nt.onrender.com${ev.filePath}`}
-                        alt={ev.title}
-                        className="w-100 h-100 object-fit-cover"
-                      />
-                    ) : isPdf && ev.filePath ? (
-                      <div className="d-flex align-items-center justify-content-center h-100 text-muted small">
-                        PDF / Document
-                      </div>
-                    ) : (
-                      <div className="d-flex align-items-center justify-content-center h-100 text-muted small">
-                        No file
-                      </div>
-                    )}
+                  <div className="position-relative">
+                    <div
+                      className="bg-light"
+                      style={{ height: 180, overflow: "hidden" }}
+                    >
+                      {isImage && ev.filePath ? (
+                        <img
+                          src={`https://jr-school-67nt.onrender.com${ev.filePath}`}
+                          alt={ev.title}
+                          className="w-100 h-100 object-fit-cover"
+                        />
+                      ) : isPdf && ev.filePath ? (
+                        <div className="d-flex align-items-center justify-content-center h-100 text-muted small">
+                          PDF / Document
+                        </div>
+                      ) : (
+                        <div className="d-flex align-items-center justify-content-center h-100 text-muted small">
+                          No file
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Overlay delete icon */}
+                    <div className="position-absolute top-0 end-0 p-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSingle(ev._id);
+                        }}
+                        className="btn btn-sm btn-outline-danger rounded-circle shadow-sm"
+                        title="Delete Event"
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
-                  <div className="card-body py-2">
+
+                  <div className="card-body">
                     <h6 className="fw-semibold text-truncate mb-1">
                       {ev.title}
                     </h6>
@@ -575,7 +604,7 @@ export default function Events() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -588,7 +617,7 @@ export default function Events() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.3 }}
             className="position-fixed bottom-0 end-0 m-4 bg-white border rounded shadow-lg p-4"
             style={{ width: "22rem", zIndex: 1050 }}
           >
@@ -648,41 +677,51 @@ export default function Events() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="position-fixed bottom-0 start-0 end-0 bg-light border-top shadow p-3 overflow-auto"
+            className="position-fixed bottom-0 start-0 end-0 bg-light border-top shadow-lg p-3 overflow-auto"
             style={{ zIndex: 1040, whiteSpace: "nowrap" }}
           >
+            <div className="fw-semibold text-dark mb-2 ms-2">
+              ♻ Recently Deleted Events
+            </div>
             {recentlyDeleted.map((ev) => (
-              <div
+              <motion.div
                 key={ev._id}
-                className="d-inline-block position-relative me-3"
-                style={{ width: 110, height: 80 }}
+                whileHover={{ scale: 1.05 }}
+                className="d-inline-block position-relative me-3 rounded overflow-hidden shadow-sm bg-white"
+                style={{ width: 120, height: 90 }}
               >
                 {ev.filePath && ev.fileType === "image" ? (
                   <img
                     src={`https://jr-school-67nt.onrender.com${ev.filePath}`}
                     alt={ev.title}
-                    className="w-100 h-100 object-fit-cover border"
+                    className="w-100 h-100 object-fit-cover"
                   />
                 ) : (
                   <div className="w-100 h-100 bg-secondary-subtle d-flex align-items-center justify-content-center text-muted small">
                     PDF / No File
                   </div>
                 )}
-                <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex flex-column justify-content-center align-items-center opacity-0 hover-opacity-100 transition text-white small rounded">
+
+                {/* Overlay restore/delete buttons */}
+                <motion.div
+                  className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center gap-2 bg-dark bg-opacity-50 text-white"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                >
                   <button
                     onClick={() => handleRestore(ev._id)}
-                    className="btn btn-success btn-sm mb-1"
+                    className="btn btn-success btn-sm px-3"
                   >
                     ♻ Restore
                   </button>
                   <button
                     onClick={() => handlePermanentDelete(ev._id)}
-                    className="btn btn-danger btn-sm"
+                    className="btn btn-danger btn-sm px-3"
                   >
                     🗑 Delete
                   </button>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ))}
           </motion.div>
         )}
@@ -706,29 +745,21 @@ export default function Events() {
               transition={{ duration: 0.2 }}
               style={{ width: "20rem" }}
             >
-              <h5 className="fw-semibold text-dark mb-2">Confirm Deletion</h5>
+              <h5 className="fw-semibold text-dark mb-2">Confirm Action</h5>
               <p className="text-secondary mb-4">{confirmPopup.message}</p>
               <div className="d-flex justify-content-center gap-2">
                 <button
                   onClick={() => {
                     confirmPopup.onConfirm();
-                    setConfirmPopup({
-                      show: false,
-                      message: "",
-                      onConfirm: null,
-                    });
+                    setConfirmPopup({ show: false, message: "", onConfirm: null });
                   }}
                   className="btn btn-danger px-3"
                 >
-                  Yes, Delete
+                  Yes, Proceed
                 </button>
                 <button
                   onClick={() =>
-                    setConfirmPopup({
-                      show: false,
-                      message: "",
-                      onConfirm: null,
-                    })
+                    setConfirmPopup({ show: false, message: "", onConfirm: null })
                   }
                   className="btn btn-outline-secondary px-3"
                 >
@@ -742,5 +773,3 @@ export default function Events() {
     </section>
   );
 }
-
-

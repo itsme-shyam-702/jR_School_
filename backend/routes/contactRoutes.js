@@ -1,11 +1,11 @@
 import express from "express";
 import Contact from "../models/Contact.js";
-import { requireAuth, requireRole } from "../middleware/auth.js"; // import auth middleware
+import { requireAuth, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // ----------------------------
-// POST new message – accessible to anyone (visitor can submit)
+// POST new message (public)
 router.post("/", async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -22,25 +22,27 @@ router.post("/", async (req, res) => {
     });
 
     const savedMessage = await newMessage.save();
-    res.status(201).json(savedMessage);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(201).json({ message: "Message sent successfully!", data: savedMessage });
+  } catch (error) {
+    console.error("❌ Error saving contact message:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // ----------------------------
-// GET all messages – staff & admin only
-router.get("/", requireAuth, requireRole(["staff", "admin"]), async (req, res) => {
+// GET all messages – staff/admin only
+router.get("/", requireAuth, requireRole(["staff", "admin"]), async (_req, res) => {
   try {
     const messages = await Contact.find({ deleted: { $ne: true } });
     res.json(messages);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error("❌ Error fetching messages:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // ----------------------------
-// Mark as read – staff & admin only
+// Mark as read
 router.put("/read/:id", requireAuth, requireRole(["staff", "admin"]), async (req, res) => {
   try {
     const message = await Contact.findById(req.params.id);
@@ -49,13 +51,14 @@ router.put("/read/:id", requireAuth, requireRole(["staff", "admin"]), async (req
     message.read = true;
     await message.save();
     res.json(message);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error("❌ Error marking message as read:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // ----------------------------
-// Soft delete – staff & admin only
+// Soft delete
 router.put("/soft-delete/:id", requireAuth, requireRole(["staff", "admin"]), async (req, res) => {
   try {
     const message = await Contact.findById(req.params.id);
@@ -63,14 +66,15 @@ router.put("/soft-delete/:id", requireAuth, requireRole(["staff", "admin"]), asy
 
     message.deleted = true;
     await message.save();
-    res.json({ message: "Message soft deleted", data: message });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ message: "Message soft deleted" });
+  } catch (error) {
+    console.error("❌ Error soft-deleting message:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // ----------------------------
-// Restore soft deleted message – staff & admin only
+// Restore deleted
 router.put("/restore/:id", requireAuth, requireRole(["staff", "admin"]), async (req, res) => {
   try {
     const message = await Contact.findById(req.params.id);
@@ -78,22 +82,24 @@ router.put("/restore/:id", requireAuth, requireRole(["staff", "admin"]), async (
 
     message.deleted = false;
     await message.save();
-    res.json({ message: "Message restored", data: message });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ message: "Message restored" });
+  } catch (error) {
+    console.error("❌ Error restoring message:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
 // ----------------------------
-// Permanent delete – staff & admin only
+// Permanent delete
 router.delete("/delete/:id", requireAuth, requireRole(["staff", "admin"]), async (req, res) => {
   try {
     const message = await Contact.findByIdAndDelete(req.params.id);
     if (!message) return res.status(404).json({ message: "Message not found" });
 
     res.json({ message: "Message permanently deleted" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error("❌ Error deleting message:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

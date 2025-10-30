@@ -3,49 +3,56 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-
 import connectDB from "./config/db.js";
+
 import eventRoutes from "./routes/eventRoutes.js";
 import galleryRoutes from "./routes/gallery.js";
 import admissionRoutes from "./routes/admissions.js";
 import contactRoutes from "./routes/contactRoutes.js";
 
-import { requireAuth } from "./middleware/auth.js"; // auth middleware
+import { requireAuth } from "./middleware/auth.js"; // optional if you use Clerk/JWT
 
+// Load environment variables and connect to DB
 dotenv.config();
 connectDB();
 
 const app = express();
 
+// ----------------------------
 // Middleware
 app.use(cors());
 app.use(express.json());
 
+// ----------------------------
 // Static path for uploads
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ----------------------------
-// API Routes with optional global auth
-app.use("/api/admission", admissionRoutes); // per-route auth handled inside
-app.use("/api/gallery", galleryRoutes);     // can protect routes inside
+// API Routes
+app.use("/api/admission", admissionRoutes);
+app.use("/api/gallery", galleryRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/contact", contactRoutes);
 
 // ----------------------------
-// Serve frontend in production
+// Frontend Serve (Production only)
 if (process.env.NODE_ENV === "production") {
-  const frontendBuildPath = path.join(__dirname, "../frontend/build");
-  app.use(express.static(frontendBuildPath));
+  // 🧠 Vite builds into "dist", not "build"
+  const frontendPath = path.join(__dirname, "../frontend/dist");
 
-  // Regex-based catch-all route to fix refresh issues
-  app.get(/.*/, function (_req, res) {
-    res.sendFile(path.join(frontendBuildPath, "index.html"));
+  app.use(express.static(frontendPath));
+
+  // ✅ Catch-all route for client-side routing
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 } else {
-  // Test route for development
-  app.get("/", (_req, res) => res.send("Server is running"));
+  // Dev route
+  app.get("/", (_req, res) => {
+    res.send("Server running in development mode ✅");
+  });
 }
 
 // ----------------------------
