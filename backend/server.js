@@ -3,16 +3,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import connectDB from "./config/db.js";
 
+import connectDB from "./config/db.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import galleryRoutes from "./routes/gallery.js";
 import admissionRoutes from "./routes/admissions.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import { requireAuth } from "./middleware/auth.js"; // auth middleware
 
-import { requireAuth } from "./middleware/auth.js"; // optional if you use Clerk/JWT
-
-// Load environment variables and connect to DB
 dotenv.config();
 connectDB();
 
@@ -37,22 +35,18 @@ app.use("/api/events", eventRoutes);
 app.use("/api/contact", contactRoutes);
 
 // ----------------------------
-// Frontend Serve (Production only)
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
-  // 🧠 Vite builds into "dist", not "build"
-  const frontendPath = path.join(__dirname, "../frontend/dist");
+  const frontendBuildPath = path.join(__dirname, "../frontend/build");
+  app.use(express.static(frontendBuildPath));
 
-  app.use(express.static(frontendPath));
-
-  // ✅ Catch-all route for client-side routing
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+  // ✅ Catch-all route for SPA (React) — FIXED for Node 22
+  app.use((_req, res) => {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
   });
 } else {
-  // Dev route
-  app.get("/", (_req, res) => {
-    res.send("Server running in development mode ✅");
-  });
+  // Dev mode test route
+  app.get("/", (_req, res) => res.send("Server is running ✅"));
 }
 
 // ----------------------------
